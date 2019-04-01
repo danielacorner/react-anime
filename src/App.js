@@ -4,6 +4,7 @@ import * as d3 from 'd3';
 import 'd3-selection-multi';
 import styled from 'styled-components';
 import StartButton from './components/StartButton';
+import useForceUpdate from 'use-force-update';
 
 const FIREWORK_DURATION = 1000;
 const LAUNCHER_WIDTH = 20;
@@ -79,7 +80,15 @@ const handleClick = ({ event }) => {
   });
 };
 
-const handleStartClick = ({ started, setStarted, setAliens }) => {
+const ALIENS_TICK_SPEED_MS = 1000;
+const handleStartClick = ({
+  started,
+  setStarted,
+  setAliens,
+  aliensProgress,
+  aliensProgressTimer,
+  forceUpdate,
+}) => {
   if (!started) {
     setStarted(true);
     const aliens = [
@@ -90,22 +99,55 @@ const handleStartClick = ({ started, setStarted, setAliens }) => {
       { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'jian' },
     ];
     setAliens(aliens);
+
+    aliensProgressTimer.current = setInterval(() => {
+      console.log('tick!', aliensProgress);
+      aliensProgress.current += 1;
+      // force update
+      forceUpdate();
+    }, ALIENS_TICK_SPEED_MS);
   }
 };
 
 const AlienStyles = styled.rect`
-  fill: tomato;
+  fill: limegreen;
 `;
 
-const Alien = ({ idx, alien }) => {
+const ALIEN_PADDING = 20;
+const ALIEN_MOVE_X = 20;
+const Alien = ({ idx, alien, aliensProgress }) => {
   const { type, size, zapsPerSec } = alien;
-  return <AlienStyles x={100} y={100} width={50 * size} height={50 * size} />;
+
+  const callback = () => {
+    console.log('ow!');
+  };
+
+  var options = {
+    root: document.querySelector('#scrollArea'),
+    rootMargin: '0px',
+    threshold: 1.0,
+  };
+
+  var observer = new IntersectionObserver(callback, options);
+
+  return (
+    <AlienStyles
+      x={100 * idx + ALIEN_PADDING + ALIEN_MOVE_X * aliensProgress.current}
+      y={ALIEN_PADDING}
+      width={50 * size}
+      height={50 * size}
+    />
+  );
 };
 
 const App = () => {
   const [launcherLeft, setLauncherLeft] = React.useState(minLeft);
   const [started, setStarted] = React.useState(false);
   const [aliens, setAliens] = React.useState([]);
+  const aliensProgress = React.useRef(0);
+  const forceUpdate = useForceUpdate();
+
+  const aliensProgressTimer = React.useRef(null);
 
   return (
     <div onMouseMove={event => handleMouseMove({ event, setLauncherLeft })}>
@@ -120,14 +162,30 @@ const App = () => {
               height={LAUNCHER_HEIGHT}
             />
             {aliens.map((alien, idx) => {
-              return <Alien key={alien.name} alien={alien} idx={idx} />;
+              return (
+                <Alien
+                  key={alien.name}
+                  alien={alien}
+                  idx={idx}
+                  aliensProgress={aliensProgress}
+                />
+              );
             })}
           </SVGStyles>
         </div>
       </div>
       <StartButton
         started={started}
-        onClick={() => handleStartClick({ started, setStarted, setAliens })}
+        onClick={() =>
+          handleStartClick({
+            started,
+            setStarted,
+            setAliens,
+            aliensProgress,
+            aliensProgressTimer,
+            forceUpdate,
+          })
+        }
       />
     </div>
   );
