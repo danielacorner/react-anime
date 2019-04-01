@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "d3": "^5.9.2",
+    "d3-selection-multi": "^1.0.1",
     "react": "^16.8.6",
     "react-anime": "^2.2.0",
     "react-dom": "^16.8.6",

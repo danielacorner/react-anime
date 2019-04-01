@@ -21,15 +21,12 @@
   box-shadow: 1px 1px 25px 15px inset rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
-.launcher {
-  width: 20px;
-  height: 40px;
-  background-color: rebeccapurple;
+/* .launcher {
   position: absolute;
   bottom: 0;
   left: 0px;
   transition: left 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-}
+} */
 svg {
   position: absolute;
   background: hsl(250, 10%, 20%);

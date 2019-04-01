@@ -2,13 +2,13 @@ import React from 'react';
 import './App.css';
 import { Transition } from 'react-transition-group';
 import * as d3 from 'd3';
+import 'd3-selection-multi';
 import styled from 'styled-components';
 
-const duration = 1000;
+const FIREWORK_DURATION = 1000;
 const LAUNCHER_WIDTH = 20;
 const LAUNCHER_HEIGHT = 40;
 const FIREWORK_HEIGHT = 20;
-const FIREWORK_WIDTH = 1;
 
 // launcher left offset
 const launcherOffsetLeft = window.innerWidth * 0.05 + LAUNCHER_WIDTH / 2;
@@ -18,53 +18,93 @@ const minLeft = 0;
 const maxLeft = window.innerWidth * 0.9 - LAUNCHER_WIDTH;
 
 // height constraints for fireworks
-const minY1 = window.innerHeight * 0.8 - LAUNCHER_HEIGHT + FIREWORK_HEIGHT;
-const maxY1 = window.innerHeight * 0.1;
+const minY = window.innerHeight * 0.8 - LAUNCHER_HEIGHT;
+const maxY = 0;
+const deltaY = minY - maxY;
 
 const handleMouseMove = ({ event, setLauncherLeft }) => {
   const mouseX = event.pageX;
-  const mouseY = event.pageY;
-
   const newLeft = Math.min(
     Math.max(mouseX - launcherOffsetLeft, minLeft),
     maxLeft,
   );
-
   setLauncherLeft(newLeft);
 };
 
-const handleClick = ({ event, isIn, setIsIn, setCoords }) => {
-  setCoords({
-    x1: event.pageX - window.innerWidth * 0.05,
-    x2: event.pageX - window.innerWidth * 0.05,
-    y1: minY1,
-    y2: minY1 - FIREWORK_HEIGHT,
+const handleClick = ({ event, launcherObserver }) => {
+  // MutationObserver config
+  const config = {
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: ['x1,x2,y1,y2'],
+  };
+  // Start observing the launcher node and listen for changes to attributes x and y
+  // while recording old values.
+  launcherObserver.observe(d3.select('.launcher').node(), config);
+
+  const clickCoords = {
+    x:
+      d3
+        .select('.launcher')
+        .node()
+        .getBBox().x +
+      LAUNCHER_WIDTH / 2,
+  };
+
+  const firework = d3
+    .select('svg')
+    .append('line')
+    .attrs({
+      class: `firework`,
+      x1: clickCoords.x,
+      x2: clickCoords.x,
+      y1: minY,
+      y2: minY - FIREWORK_HEIGHT,
+    });
+  setTimeout(() => {
+    firework
+      .transition()
+      .duration(FIREWORK_DURATION)
+      .attrs({
+        class: `firework firework-launched`,
+        x1: clickCoords.x,
+        x2: clickCoords.x,
+        y1: maxY,
+        y2: maxY - FIREWORK_HEIGHT,
+      })
+      .remove();
   });
-  setIsIn(true);
 };
 
 const SVGStyles = styled.svg`
+  .launcher {
+    fill: rebeccapurple;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
   .firework {
     stroke: white;
-    /* stroke-width: 1px */
+    transition: all ${FIREWORK_DURATION}s cubic-bezier(0.94, 0.46, 0.45, 0.25);
   }
-  .launch-transition {
-    transition: all 2s cubic-bezier(0.19, 1, 0.22, 1);
-  }
-  .launch-entering,
-  .launch-exiting {
-    transform: translate();
+  .firework-launched {
   }
 `;
 
 const App = () => {
-  const [isIn, setIsIn] = React.useState(false);
   const [launcherLeft, setLauncherLeft] = React.useState(minLeft);
-  const [coords, setCoords] = React.useState({
-    x1: 0,
-    x2: 0,
-    y1: minY1,
-    y2: minY1 + FIREWORK_HEIGHT,
+  const [fireworkLeft, setFireworkLeft] = React.useState(0);
+
+  // Create a new MutationObserver.
+  // This one just logs changes to attributes.
+  var launcherObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      console.log(
+        m.attributeName +
+          ' -- old:' +
+          m.oldValue +
+          ', new: ' +
+          m.target.getAttribute(m.attributeName),
+      );
+    });
   });
 
   return (
@@ -72,22 +112,17 @@ const App = () => {
       <div class="background">
         <div
           class="container"
-          onClick={event => handleClick({ event, isIn, setIsIn, setCoords })}
+          onClick={event => handleClick({ event, launcherObserver })}
         >
           <SVGStyles>
-            <Transition in={isIn} timeout={duration} mountOnEnter unmountOnExit>
-              {status => (
-                <line
-                  x1={coords.x1}
-                  x2={coords.x2}
-                  y1={coords.y1}
-                  y2={coords.y2}
-                  className={`firework launch-transition launch-${status}`}
-                />
-              )}
-            </Transition>
+            <rect
+              class="launcher"
+              x={launcherLeft}
+              y={minY}
+              width={LAUNCHER_WIDTH}
+              height={LAUNCHER_HEIGHT}
+            />
           </SVGStyles>
-          <div class="launcher" style={{ left: launcherLeft }} />
         </div>
       </div>
     </div>
