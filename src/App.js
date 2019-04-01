@@ -5,22 +5,13 @@ import 'd3-selection-multi';
 import styled from 'styled-components';
 import StartButton from './components/StartButton';
 import useForceUpdate from 'use-force-update';
+import Rocket from './assets/Rocket';
+// import { ReactComponent as Rocket } from './assets/rocket.svg';
 
 const FIREWORK_DURATION = 1000;
-const LAUNCHER_WIDTH = 20;
-const LAUNCHER_HEIGHT = 40;
+const LAUNCHER_WIDTH = 58;
+const LAUNCHER_HEIGHT = 58;
 const FIREWORK_HEIGHT = 20;
-
-const SVGStyles = styled.svg`
-  .launcher {
-    fill: rebeccapurple;
-    transition: all 2.5s cubic-bezier(0.19, 1, 0.22, 1);
-  }
-  .firework {
-    stroke: white;
-    transition: all ${FIREWORK_DURATION}s cubic-bezier(0.94, 0.46, 0.45, 0.25);
-  }
-`;
 
 // launcher left offset
 const launcherOffsetLeft = window.innerWidth * 0.05 + LAUNCHER_WIDTH / 2;
@@ -45,12 +36,12 @@ const handleMouseMove = ({ event, setLauncherLeft }) => {
 const handleClick = ({ event }) => {
   const clickCoords = {
     x:
-      // firework x = launcher current x (getBBox gets current x)
+      // firework x = launcher current x gets current x)
+      // (getBBox for svg, getBoundingClientRect for HTML elements)
       d3
-        .select('.launcher')
+        .select('#rocket')
         .node()
-        .getBBox().x +
-      LAUNCHER_WIDTH / 2,
+        .getBoundingClientRect().x,
   };
 
   const firework = d3
@@ -101,9 +92,7 @@ const handleStartClick = ({
     setAliens(aliens);
 
     aliensProgressTimer.current = setInterval(() => {
-      console.log('tick!', aliensProgress);
       aliensProgress.current += 1;
-      // force update
       forceUpdate();
     }, ALIENS_TICK_SPEED_MS);
   }
@@ -140,6 +129,17 @@ const Alien = ({ idx, alien, aliensProgress }) => {
   );
 };
 
+const SVGStyles = styled.svg`
+  .launcher,
+  .rocket {
+    transition: all 2.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  .firework {
+    stroke: white;
+    transition: all ${FIREWORK_DURATION}s cubic-bezier(0.94, 0.46, 0.45, 0.25);
+  }
+`;
+
 const App = () => {
   const [launcherLeft, setLauncherLeft] = React.useState(minLeft);
   const [started, setStarted] = React.useState(false);
@@ -154,8 +154,8 @@ const App = () => {
       <div className="background">
         <div className="container" onClick={event => handleClick({ event })}>
           <SVGStyles>
-            <rect
-              className="launcher"
+            <Rocket
+              className="rocket"
               x={launcherLeft}
               y={minY}
               width={LAUNCHER_WIDTH}
