@@ -31,7 +31,6 @@ const maxLeft = window.innerWidth * 0.9 - LAUNCHER_WIDTH;
 // height constraints for fireworks
 const minY = window.innerHeight * 0.8 - LAUNCHER_HEIGHT;
 const maxY = 0;
-const deltaY = minY - maxY;
 
 const handleMouseMove = ({ event, setLauncherLeft }) => {
   const mouseX = event.pageX;
@@ -80,8 +79,33 @@ const handleClick = ({ event }) => {
   });
 };
 
+const handleStartClick = ({ started, setStarted, setAliens }) => {
+  if (!started) {
+    setStarted(true);
+    const aliens = [
+      { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'bob' },
+      { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'sue' },
+      { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'sioux' },
+      { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'gord' },
+      { type: 'cool', size: 1, zapsPerSec: 0.2, name: 'jian' },
+    ];
+    setAliens(aliens);
+  }
+};
+
+const AlienStyles = styled.rect`
+  fill: tomato;
+`;
+
+const Alien = ({ idx, alien }) => {
+  const { type, size, zapsPerSec } = alien;
+  return <AlienStyles x={100} y={100} width={50 * size} height={50 * size} />;
+};
+
 const App = () => {
   const [launcherLeft, setLauncherLeft] = React.useState(minLeft);
+  const [started, setStarted] = React.useState(false);
+  const [aliens, setAliens] = React.useState([]);
 
   return (
     <div onMouseMove={event => handleMouseMove({ event, setLauncherLeft })}>
@@ -95,10 +119,16 @@ const App = () => {
               width={LAUNCHER_WIDTH}
               height={LAUNCHER_HEIGHT}
             />
+            {aliens.map((alien, idx) => {
+              return <Alien key={alien.name} alien={alien} idx={idx} />;
+            })}
           </SVGStyles>
         </div>
       </div>
-      <StartButton />
+      <StartButton
+        started={started}
+        onClick={() => handleStartClick({ started, setStarted, setAliens })}
+      />
     </div>
   );
 };
