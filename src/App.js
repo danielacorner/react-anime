@@ -19,7 +19,8 @@ import {
   SCREEN_X_RIGHT,
   ALIENS_TICK_SPEED_MS,
   LAUNCHER_WIDTH,
-  ALIENS_LEVEL_1
+  ALIENS_LEVEL_1,
+  ALIEN_WIDTH
 } from './components/constants';
 // import { ReactComponent as Rocket } from './assets/rocket.svg';
 
@@ -84,27 +85,27 @@ const updateAlienPositions = ({
     aln.getBoundingClientRect()
   );
 
-  const didAliensHitSide = alienRects.reduce((accum, cur) => {
-    if (
-      cur.left - ALIEN_MOVE_X + 1 < SCREEN_X_LEFT ||
-      cur.right + ALIEN_MOVE_X > SCREEN_X_RIGHT
-    ) {
-      return true;
+  let didAliensHitSide = false;
+  alienRects.forEach((aln, idx) => {
+    if (idx === 0) {
+      console.log(aln.left - ALIEN_MOVE_X, SCREEN_X_LEFT);
     }
-  }, false);
+    if (
+      aln.left - ALIEN_MOVE_X < SCREEN_X_LEFT ||
+      aln.right + ALIEN_MOVE_X > SCREEN_X_RIGHT
+    ) {
+      didAliensHitSide = true;
+    }
+  });
 
   if (didAliensHitSide) {
     aliensProgressY.current++;
     areAliensMovingRight.current = !areAliensMovingRight.current;
     console.log(aliensProgressY, areAliensMovingRight);
-    areAliensMovingRight.current
-      ? aliensProgressX.current--
-      : aliensProgressX.current++;
-  } else {
-    areAliensMovingRight.current
-      ? aliensProgressX.current++
-      : aliensProgressX.current--;
   }
+  areAliensMovingRight.current
+    ? aliensProgressX.current++
+    : aliensProgressX.current--;
   forceUpdate();
 };
 
@@ -153,7 +154,7 @@ const App = () => {
   const [started, setStarted] = React.useState(false);
   const [aliens, setAliens] = React.useState([]);
   const areAliensMovingRight = React.useRef(true);
-  const aliensProgressX = React.useRef(0);
+  const aliensProgressX = React.useRef(1);
   const aliensProgressY = React.useRef(0);
   const forceUpdate = useForceUpdate();
 
