@@ -60,6 +60,23 @@ const handleClick = ({ event }) => {
       y1: minY,
       y2: minY + FIREWORK_HEIGHT
     });
+
+  // TODO: when shot fired, create intersection observer for each alien, then scrap them when the shot is removed (useEffect?)
+  const AlienWasHitCallback = aln => {
+    console.log('ow!');
+  };
+  const aliens = Array.from(document.querySelectorAll('.alien'));
+  const observersArray = aliens.map(aln => {
+    const options = {
+      root: document.querySelector('.firework'),
+      rootMargin: '0px',
+      threshold: 1.0
+    };
+    return new IntersectionObserver(() => AlienWasHitCallback(aln), options);
+  });
+
+  observersArray.forEach((obs, idx) => obs.observe(aliens[idx]));
+
   setTimeout(() => {
     firework
       .transition()
@@ -79,14 +96,15 @@ const updateAlienPositions = ({
   areAliensMovingRight,
   aliensProgressY,
   aliensProgressX,
+  alienRects,
   forceUpdate
 }) => {
-  const alienRects = Array.from(document.querySelectorAll('.alien')).map(aln =>
-    aln.getBoundingClientRect()
+  alienRects.current = Array.from(document.querySelectorAll('.alien')).map(
+    aln => aln.getBoundingClientRect()
   );
 
   let didAliensHitSide = false;
-  alienRects.forEach((aln, idx) => {
+  alienRects.current.forEach((aln, idx) => {
     if (idx === 0) {
       console.log(aln.left - ALIEN_MOVE_X, SCREEN_X_LEFT);
     }
@@ -116,6 +134,7 @@ const handleStartClick = ({
   areAliensMovingRight,
   aliensProgressY,
   aliensProgressX,
+  alienRects,
   aliensProgressTimer,
   forceUpdate
 }) => {
@@ -131,6 +150,7 @@ const handleStartClick = ({
           areAliensMovingRight,
           aliensProgressY,
           aliensProgressX,
+          alienRects,
           forceUpdate
         }),
       ALIENS_TICK_SPEED_MS
@@ -156,6 +176,7 @@ const App = () => {
   const areAliensMovingRight = React.useRef(true);
   const aliensProgressX = React.useRef(1);
   const aliensProgressY = React.useRef(0);
+  const alienRects = React.useRef(null);
   const forceUpdate = useForceUpdate();
 
   const aliensProgressTimer = React.useRef(null);
@@ -196,6 +217,7 @@ const App = () => {
             areAliensMovingRight,
             aliensProgressX,
             aliensProgressY,
+            alienRects,
             aliensProgressTimer,
             forceUpdate
           })

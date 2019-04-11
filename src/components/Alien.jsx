@@ -14,18 +14,6 @@ const AlienStyles = styled.rect`
 const Alien = ({ idx, alien, aliensProgressX, aliensProgressY }) => {
   const { type, size, zapsPerSec } = alien;
 
-  const callback = () => {
-    console.log('ow!');
-  };
-
-  var options = {
-    root: document.querySelector('#scrollArea'),
-    rootMargin: '0px',
-    threshold: 1.0
-  };
-
-  var observer = new IntersectionObserver(callback, options);
-
   return (
     <AlienStyles
       className="alien"
