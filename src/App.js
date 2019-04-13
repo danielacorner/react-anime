@@ -68,14 +68,16 @@ const handleClick = ({ event }) => {
   const aliens = Array.from(document.querySelectorAll('.alien'));
   const observersArray = aliens.map(aln => {
     const options = {
-      root: document.querySelector('.firework'),
+      root: aln,
       rootMargin: '0px',
       threshold: 1.0
     };
     return new IntersectionObserver(() => AlienWasHitCallback(aln), options);
   });
 
-  observersArray.forEach((obs, idx) => obs.observe(aliens[idx]));
+  observersArray.forEach((obs, idx) =>
+    obs.observe(document.querySelector('.firework'))
+  );
 
   setTimeout(() => {
     firework
