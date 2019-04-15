@@ -8,31 +8,31 @@ import useForceUpdate from 'use-force-update';
 import Rocket from './assets/Rocket';
 import Alien from './components/Alien';
 import {
-  LAUNCHER_HEIGHT,
-  LAUNCHER_OFFSET_LEFT,
+  ROCKET_HEIGHT,
+  ROCKET_OFFSET_LEFT,
   MIN_LEFT,
   MAX_LEFT,
-  FIREWORK_HEIGHT,
-  FIREWORK_DURATION,
+  MISSILE_HEIGHT,
+  MISSILE_DURATION,
   ALIEN_MOVE_X,
   SCREEN_X_LEFT,
   SCREEN_X_RIGHT,
   ALIENS_TICK_SPEED_MS,
-  LAUNCHER_WIDTH,
+  ROCKET_WIDTH,
   ALIENS_LEVEL_1,
-  ALIEN_WIDTH
+  ALIEN_WIDTH,
 } from './components/constants';
 // import { ReactComponent as Rocket } from './assets/rocket.svg';
 
-// height constraints for fireworks
-const minY = window.innerHeight * 0.8 - LAUNCHER_HEIGHT;
+// height constraints for missiles
+const minY = window.innerHeight * 0.8 - ROCKET_HEIGHT;
 const maxY = 0;
 
 const handleMouseMove = ({ event, setLauncherLeft }) => {
   const mouseX = event.pageX;
   const newLeft = Math.min(
-    Math.max(mouseX - LAUNCHER_OFFSET_LEFT, MIN_LEFT),
-    MAX_LEFT
+    Math.max(mouseX - ROCKET_OFFSET_LEFT, MIN_LEFT),
+    MAX_LEFT,
   );
   setLauncherLeft(newLeft);
 };
@@ -40,55 +40,67 @@ const handleMouseMove = ({ event, setLauncherLeft }) => {
 const handleClick = ({ event }) => {
   const clickCoords = {
     x:
-      // firework x = launcher current x gets current x)
+      // missile x = launcher current x gets current x)
       // (getBBox for svg, getBoundingClientRect for HTML elements)
       d3
         .select('#rocket')
         .node()
-        .getBoundingClientRect().x
+        .getBoundingClientRect().x,
   };
 
-  const firework = d3
+  const missileX = clickCoords.x - ROCKET_WIDTH / 2 - 2;
+
+  const missile = d3
     .select('svg')
     .insert('line')
     // move the line under the launcher
     .lower()
     .attrs({
-      class: `firework`,
-      x1: clickCoords.x,
-      x2: clickCoords.x,
+      class: `missile`,
+      x1: missileX,
+      x2: missileX,
       y1: minY,
-      y2: minY + FIREWORK_HEIGHT
+      y2: minY + MISSILE_HEIGHT,
     });
 
-  // TODO: when shot fired, create intersection observer for each alien, then scrap them when the shot is removed (useEffect?)
-  const AlienWasHitCallback = aln => {
-    console.log('ow!');
+  const AlienWasHitCallback = ({ aln, missile }) => {
+    console.log('ow!', aln);
+    aln.remove();
+    missile.remove();
   };
-  const aliens = Array.from(document.querySelectorAll('.alien'));
-  const observersArray = aliens.map(aln => {
-    const options = {
-      root: aln,
-      rootMargin: '0px',
-      threshold: 1.0
-    };
-    return new IntersectionObserver(() => AlienWasHitCallback(aln), options);
-  });
-
-  observersArray.forEach((obs, idx) =>
-    obs.observe(document.querySelector('.firework'))
-  );
 
   setTimeout(() => {
-    firework
+    missile
       .transition()
-      .duration(FIREWORK_DURATION)
+      .duration(MISSILE_DURATION)
       .attrs({
-        class: `firework firework-launched`,
-        x1: clickCoords.x,
-        x2: clickCoords.x,
-        y1: maxY,
-        y2: maxY - FIREWORK_HEIGHT
+        class: `missile missile-launched`,
+        x1: missileX,
+        x2: missileX,
+      })
+      .tween('attr.y1', function() {
+        const i = d3.interpolate(this.getAttribute('y1'), maxY);
+        return function(t) {
+          const y1 = this.getAttribute('y1');
+          const x = this.getAttribute('x1');
+          const aliens = Array.from(document.querySelectorAll('.alien'));
+          aliens.forEach(aln => {
+            const bb = aln.getBoundingClientRect();
+            if (bb.left < x && bb.right > x && bb.bottom > y1) {
+              AlienWasHitCallback({ aln, missile });
+            }
+          });
+          this.setAttribute('y1', i(t));
+        };
+      })
+      .tween('attr.y2', function() {
+        const i = d3.interpolate(
+          this.getAttribute('y2'),
+          maxY - MISSILE_HEIGHT,
+        );
+        return function(t) {
+          this.setAttribute('y2', i(t));
+        };
       })
       .remove();
   });
@@ -99,10 +111,10 @@ const updateAlienPositions = ({
   aliensProgressY,
   aliensProgressX,
   alienRects,
-  forceUpdate
+  forceUpdate,
 }) => {
   alienRects.current = Array.from(document.querySelectorAll('.alien')).map(
-    aln => aln.getBoundingClientRect()
+    aln => aln.getBoundingClientRect(),
   );
 
   let didAliensHitSide = false;
@@ -138,7 +150,7 @@ const handleStartClick = ({
   aliensProgressX,
   alienRects,
   aliensProgressTimer,
-  forceUpdate
+  forceUpdate,
 }) => {
   if (!started) {
     setStarted(true);
@@ -153,9 +165,9 @@ const handleStartClick = ({
           aliensProgressY,
           aliensProgressX,
           alienRects,
-          forceUpdate
+          forceUpdate,
         }),
-      ALIENS_TICK_SPEED_MS
+      ALIENS_TICK_SPEED_MS,
     );
   }
 };
@@ -165,9 +177,9 @@ const SVGStyles = styled.svg`
   .rocket {
     transition: all 2.5s cubic-bezier(0.19, 1, 0.22, 1);
   }
-  .firework {
+  .missile {
     stroke: white;
-    transition: all ${FIREWORK_DURATION}s cubic-bezier(0.94, 0.46, 0.45, 0.25);
+    transition: all ${MISSILE_DURATION}s cubic-bezier(0.94, 0.46, 0.45, 0.25);
   }
 `;
 
@@ -192,8 +204,8 @@ const App = () => {
               className="rocket"
               x={launcherLeft}
               y={minY}
-              width={LAUNCHER_WIDTH}
-              height={LAUNCHER_HEIGHT}
+              width={ROCKET_WIDTH}
+              height={ROCKET_HEIGHT}
             />
             {aliens.map((alien, idx) => {
               return (
@@ -221,7 +233,7 @@ const App = () => {
             aliensProgressY,
             alienRects,
             aliensProgressTimer,
-            forceUpdate
+            forceUpdate,
           })
         }
       />
